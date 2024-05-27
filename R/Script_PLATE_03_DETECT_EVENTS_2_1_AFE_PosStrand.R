@@ -28,7 +28,7 @@ DetectEvents.AFE.PosStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
     attr <- strsplit(df.small$V9, split=";")
     df.small$gene_id <- textclean::mgsub(sapply(attr, function(x) grep("gene_id", x, value=TRUE)), c("gene_id", " ", "\""), "")
     df.small$gene_short_name <- textclean::mgsub(sapply(attr, function(x) grep("gene_name", x, value=TRUE)), c("gene_name", " ", "\""), "")
-    df.small$gene_type <- textclean::mgsub(sapply(attr, function(x) grep("gene_type", x, value=TRUE)), c("gene_type", " ", "\""), "")
+    df.small$gene_type <- textclean::mgsub(sapply(attr, function(x) grep("gene_biotype", x, value=TRUE)), c("gene_biotype", " ", "\""), "")
     df.feature <- df.small[, c("gene_id", "gene_short_name", "gene_type")]
     
     # Subset expressed genes
