@@ -75,10 +75,21 @@ DetectEvents.AFE.PosStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
     }
     df <- do.call(rbind.data.frame, .list)
     df <- unique(df)
+    message(paste("Number of unique final exon-exon junctions:", nrow(df)))
+
     
     # Remove redundant "_PAR_Y" gene_ids
-    df <- df[-grep("_PAR_Y", df$gene_id), ]
+    #df <- df[-grep("_PAR_Y", df$gene_id), ]
+
+    # Check if df is empty before adding "chr" prefix
+    if(nrow(df) == 0) {
+        message("Data frame is empty before adding 'chr' prefix.")
+        return(MarvelObject)
+    }
     
+    # Prefix chromosome with 'chr'
+    df$chr <- paste0("chr", df$chr)
+
     # Subset expressed SJ
     df$coord.intron <- paste(df$chr, df$V4 + 1, df$V1 - 1, sep=":")
     df <- df[which(df$coord.intron %in% row.names(df.sj)), ]
@@ -118,7 +129,15 @@ DetectEvents.AFE.PosStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
     
     # Subset genes with >=2 transcripts
     freq <- as.data.frame(table(df$gene_id))
-    names(freq) <- c("gene_id", "n.transcripts")
+    #names(freq) <- c("gene_id", "n.transcripts")
+    if (ncol(freq) == 2) {
+        names(freq) <- c("gene_id", "n.transcripts")
+    } else {
+        message("Unexpected format in frequency table")
+        print(freq)
+        return(NULL)
+    }
+
     df <- join(df, freq, by="gene_id", type="left")
     df <- df[which(df$n.transcripts >= 2), ]
     df$n.transcripts <- NULL
