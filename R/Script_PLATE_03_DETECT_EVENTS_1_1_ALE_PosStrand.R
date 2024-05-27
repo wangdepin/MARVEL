@@ -84,8 +84,8 @@ DetectEvents.ALE.PosStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
         df.small$gene_short_name <- textclean::mgsub(., c("gene_name", " ", "\""), "")
         
         # Retrieve gene_type
-        . <- sapply(attr, function(x) grep("gene_type", x, value=TRUE))
-        df.small$gene_type <- textclean::mgsub(., c("gene_type", " ", "\""), "")
+        . <- sapply(attr, function(x) grep("gene_biotype", x, value=TRUE))
+        df.small$gene_type <- textclean::mgsub(., c("gene_biotype", " ", "\""), "")
         
         # Save as reference data frame
         df.feature <- df.small[, c("gene_id", "gene_short_name", "gene_type")]
@@ -171,15 +171,25 @@ DetectEvents.ALE.PosStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
 
     # Keep unique junctions
     df <- unique(df)
+    message(paste("Number of unique final exon-exon junctions:", nrow(df)))
 
     # Remove redundant "_PAR_Y" gene_ids
-    par_y <- grep("_PAR_Y", df$gene_id)
+    #par_y <- grep("_PAR_Y", df$gene_id)
     
-    if(length(par_y) != 0) {
+    # if(length(par_y) != 0) {
         
-        df <- df[-grep("_PAR_Y", df$gene_id), ]
+    #     df <- df[-grep("_PAR_Y", df$gene_id), ]
         
+    # }
+
+    # Check if df is empty before adding "chr" prefix
+    if(nrow(df) == 0) {
+        message("Data frame is empty before adding 'chr' prefix.")
+        return(MarvelObject)
     }
+    
+    # Prefix chromosome with 'chr'
+    df$chr <- paste0("chr", df$chr)
 
     # Subset expressed SJ
     df$coord.intron <- paste(df$chr, df$V2 + 1, df$V3 - 1, sep=":")
@@ -230,6 +240,7 @@ DetectEvents.ALE.PosStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
 
         df.small <- df[which(df$coord.intron %in% coord.introns[i]), ]
 
+        if(nrow(df.small) == 0) next
         if(nrow(df.small)==1) {
         
                 .list[[i]] <- df.small
@@ -252,15 +263,21 @@ DetectEvents.ALE.PosStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
 
     # Subset genes with >=2 transcripts
         # Tabulate n
-        freq <- as.data.frame(table(df$gene_id))
+    freq <- as.data.frame(table(df$gene_id))
+    if (ncol(freq) == 2) {
         names(freq) <- c("gene_id", "n.transcripts")
-        
-        # Annotate
-        df <- join(df, freq, by="gene_id", type="left")
-        
-        # Subset
-        df <- df[which(df$n.transcripts >= 2), ]
-        df$n.transcripts <- NULL
+    } else {
+        message("Unexpected format in frequency table")
+        print(freq)
+        return(NULL)
+    }
+
+    # Annotate
+    df <- join(df, freq, by="gene_id", type="left")
+    
+    # Subset
+    df <- df[which(df$n.transcripts >= 2), ]
+    df$n.transcripts <- NULL
         
     # Subset genes beginning with the SAME start SJ, DIFFERENT end SJ
     coords <- unique(df$V2)

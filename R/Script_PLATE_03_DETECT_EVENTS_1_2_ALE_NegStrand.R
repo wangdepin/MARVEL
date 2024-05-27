@@ -54,37 +54,37 @@ DetectEvents.ALE.NegStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
   
     # Create row names
         # SJ matrix
-        row.names(df.sj) <- df.sj$coord.intron
-        df.sj$coord.intron <- NULL
-        
-        # Gene matrix
-        row.names(df.gene) <- df.gene$gene_id
-        df.gene$gene_id <- NULL
+    row.names(df.sj) <- df.sj$coord.intron
+    df.sj$coord.intron <- NULL
+    
+    # Gene matrix
+    row.names(df.gene) <- df.gene$gene_id
+    df.gene$gene_id <- NULL
         
     # Recode SJ NA's as 0'
     df.sj[is.na(df.sj)] <- 0
 
     # Retrieve gene_id metadata for annotation later
         # Subset gene records
-        df.small <- df[which(df$V3=="gene"), ]
+    df.small <- df[which(df$V3=="gene"), ]
         
         # Parse attributes
-        attr <- strsplit(df.small$V9, split=";")
-        
-        # Retrieve gene_id
-        . <- sapply(attr, function(x) grep("gene_id", x, value=TRUE))
-        df.small$gene_id <- textclean::mgsub(., c("gene_id", " ", "\""), "")
+    attr <- strsplit(df.small$V9, split=";")
+    
+    # Retrieve gene_id
+    . <- sapply(attr, function(x) grep("gene_id", x, value=TRUE))
+    df.small$gene_id <- textclean::mgsub(., c("gene_id", " ", "\""), "")
 
-        # Retrieve gene_short_name
-        . <- sapply(attr, function(x) grep("gene_name", x, value=TRUE))
-        df.small$gene_short_name <- textclean::mgsub(., c("gene_name", " ", "\""), "")
-        
-        # Retrieve gene_type
-        . <- sapply(attr, function(x) grep("gene_type", x, value=TRUE))
-        df.small$gene_type <- textclean::mgsub(., c("gene_type", " ", "\""), "")
-        
-        # Save as reference data frame
-        df.feature <- df.small[, c("gene_id", "gene_short_name", "gene_type")]
+    # Retrieve gene_short_name
+    . <- sapply(attr, function(x) grep("gene_name", x, value=TRUE))
+    df.small$gene_short_name <- textclean::mgsub(., c("gene_name", " ", "\""), "")
+    
+    # Retrieve gene_type
+    . <- sapply(attr, function(x) grep("gene_biotype", x, value=TRUE))
+    df.small$gene_type <- textclean::mgsub(., c("gene_biotype", " ", "\""), "")
+    
+    # Save as reference data frame
+    df.feature <- df.small[, c("gene_id", "gene_short_name", "gene_type")]
 
     ##########################################################################
     ######################### SUBSET EXPRESSED GENES #########################
@@ -169,13 +169,22 @@ DetectEvents.ALE.NegStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
     df <- unique(df)
 
     # Remove redundant "_PAR_Y" gene_ids
-    par_y <- grep("_PAR_Y", df$gene_id)
+    #par_y <- grep("_PAR_Y", df$gene_id)
     
-    if(length(par_y) != 0) {
+    # if(length(par_y) != 0) {
         
-        df <- df[-grep("_PAR_Y", df$gene_id), ]
+    #     df <- df[-grep("_PAR_Y", df$gene_id), ]
         
+    # }
+
+    # Check if df is empty before adding "chr" prefix
+    if(nrow(df) == 0) {
+        message("Data frame is empty before adding 'chr' prefix.")
+        return(MarvelObject)
     }
+    
+    # Prefix chromosome with 'chr'
+    df$chr <- paste0("chr", df$chr)
 
     # Subset expressed SJ
     df$coord.intron <- paste(df$chr, df$V4 + 1, df$V1 - 1, sep=":")
@@ -228,6 +237,7 @@ DetectEvents.ALE.NegStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
 
         df.small <- df[which(df$coord.intron %in% coord.introns[i]), ]
 
+        if(nrow(df.small) == 0) next
         if(nrow(df.small)==1) {
         
                 .list[[i]] <- df.small
@@ -250,15 +260,20 @@ DetectEvents.ALE.NegStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
 
     # Subset genes with >=2 transcripts
         # Tabulate n
-        freq <- as.data.frame(table(df$gene_id))
+    freq <- as.data.frame(table(df$gene_id))
+    if (ncol(freq) == 2) {
         names(freq) <- c("gene_id", "n.transcripts")
-        
-        # Annotate
-        df <- join(df, freq, by="gene_id", type="left")
-        
-        # Subset
-        df <- df[which(df$n.transcripts >= 2), ]
-        df$n.transcripts <- NULL
+    } else {
+        message("Unexpected format in frequency table")
+        print(freq)
+        return(NULL)
+    }
+    # Annotate
+    df <- join(df, freq, by="gene_id", type="left")
+    
+    # Subset
+    df <- df[which(df$n.transcripts >= 2), ]
+    df$n.transcripts <- NULL
         
     # Subset genes beginning with the SAME start SJ, DIFFERENT end SJ
     coords <- unique(df$V1)

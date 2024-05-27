@@ -47,13 +47,13 @@ DetectEvents.ALE <- function(MarvelObject, min.cells=50, min.expr=1, track.progr
     }
     
     # Remove novel transcripts
-    index <- grep("MSTRG", df$V9, fixed=TRUE)
+    # index <- grep("MSTRG", df$V9, fixed=TRUE)
     
-    if(length(index) != 0) {
+    # if(length(index) != 0) {
         
-        df <- df[-index, ]
+    #     df <- df[-index, ]
         
-    }
+    # }
     
     # Parse GTF
     message("Parsing GTF...")
