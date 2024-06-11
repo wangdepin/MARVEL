@@ -83,7 +83,7 @@ Preprocess_rMATS.MXE <- function(file, GTF) {
     # Keep unique entries
     df <- unique(df)
 
-    # Annotate with gene_type
+    # Annotate with gene_biotype
         # Build gene reference table
             # Subset genes
             ref <- gtf[which(gtf$V3=="gene"), ]
@@ -97,20 +97,20 @@ Preprocess_rMATS.MXE <- function(file, GTF) {
                 gene_id <- gsub("\"", "", gene_id)
                 head(gene_id)
                 
-                # gene_type
-                gene_type <- strsplit(ref$V9, split=";")
-                gene_type <- sapply(gene_type, function(x) grep("gene_type", x, value=TRUE))
-                gene_type <- gsub("gene_type", "", gene_type)
-                gene_type <- gsub(" ", "", gene_type)
-                gene_type <- gsub("\"", "", gene_type)
-                head(gene_type)
+                # gene_biotype
+                gene_biotype <- strsplit(ref$V9, split=";")
+                gene_biotype <- sapply(gene_biotype, function(x) grep("gene_biotype", x, value=TRUE))
+                gene_biotype <- gsub("gene_biotype", "", gene_biotype)
+                gene_biotype <- gsub(" ", "", gene_biotype)
+                gene_biotype <- gsub("\"", "", gene_biotype)
+                head(gene_biotype)
 
                 # Create new columns
                 ref$gene_id <- gene_id
-                ref$gene_type <- gene_type
+                ref$gene_biotype <- gene_biotype
 
                 # Keep unique entries
-                ref <- unique(ref[, c("gene_id", "gene_type")])
+                ref <- unique(ref[, c("gene_id", "gene_biotype")])
                 
         # Annotate with attributes
         df <- join(df, ref, by="gene_id", type="left")
@@ -139,7 +139,7 @@ Preprocess_rMATS.MXE <- function(file, GTF) {
                 .list[[i]] <- data.frame("tran_id"=tran_ids[i],
                                          "gene_id"=paste(.$gene_id, collapse="|"),
                                          "gene_short_name"=paste(.$gene_short_name, collapse="|"),
-                                         "gene_type"=paste(.$gene_type, collapse="|"),
+                                         "gene_biotype"=paste(.$gene_biotype, collapse="|"),
                                          stringsAsFactors=FALSE
                                          )
                                          
@@ -153,9 +153,9 @@ Preprocess_rMATS.MXE <- function(file, GTF) {
         }
         
     # Check if gene types found for all genes
-    if(sum(is.na(df$gene_type) != 0)) {
+    if(sum(is.na(df$gene_biotype) != 0)) {
         
-        "Not all genes were successfully annotated with gene_type from GTF file. Please check that the GTF version/file provided is the same as that used in your rMATS step. This is a warning message, not an error."
+        "Not all genes were successfully annotated with gene_biotype from GTF file. Please check that the GTF version/file provided is the same as that used in your rMATS step. This is a warning message, not an error."
         
         
     }
