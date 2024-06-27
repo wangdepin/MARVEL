@@ -17,6 +17,7 @@ DetectEvents.AFE.PosStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
     # Create row names
     row.names(df.sj) <- df.sj$coord.intron
     df.sj$coord.intron <- NULL
+    df.gene <- na.omit(df.gene)
     row.names(df.gene) <- df.gene$gene_id
     df.gene$gene_id <- NULL
     
@@ -50,7 +51,7 @@ DetectEvents.AFE.PosStrand <- function(MarvelObject, parsed.gtf=NULL, min.cells=
     df <- df[which(df$transcript_id %in% transcript_ids), ]
     
     # Retrieve last SJs
-    message(paste("Retrieving final exon-exon junctions from ", length(transcript_ids), " multi-exon transcripts", sep=""))
+    message(paste("Retrieving first exon-exon junctions from ", length(transcript_ids), " multi-exon transcripts", sep=""))
     transcript_ids <- unique(df$transcript_id)
     .list <- list()
     if(track.progress==TRUE) {
